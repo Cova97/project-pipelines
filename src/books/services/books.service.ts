@@ -7,10 +7,21 @@ export class BooksService {
     constructor(private readonly prisma: PrismaService) {}
     
     async create(createBookDto: CreateBookDto) {
-        return this.prisma.book.create({
-        data: createBookDto,
-        });
-    }
+    const { categoryIds, ...bookData } = createBookDto;
+
+    return this.prisma.book.create({
+      data: {
+        ...bookData,
+        categories: {
+          // Conecta el libro a categorías existentes por su ID
+          connect: categoryIds.map((id) => ({ id })),
+        },
+      },
+      include: {
+        categories: true, // Devuelve el libro con sus categorías
+      },
+    });
+  }
     
     async findAll() {
         return this.prisma.book.findMany();
