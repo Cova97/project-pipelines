@@ -1,6 +1,9 @@
 # ---- Etapa 1: El Taller (Builder) ----
-# Aquí se instala todo lo necesario y se construye la aplicación.
-FROM node:18-alpine AS builder
+# Usamos la imagen 'slim' (basada en Debian) para evitar problemas de compatibilidad con Prisma.
+FROM node:24-slim AS builder
+
+# Actualizamos los paquetes del sistema operativo base por seguridad.
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -8,18 +11,18 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-# Copia el resto del código fuente (src, prisma, etc.)
+# Copia el resto del código fuente
 COPY . .
 
-# Genera el cliente de Prisma
+# Genera el cliente de Prisma (ahora compatible con el entorno final)
 RUN npx prisma generate
 
 # Construye la aplicación, creando la carpeta 'dist'
 RUN npm run build
 
 # ---- Etapa 2: El Producto Final (Production) ----
-# Aquí se crea una imagen limpia solo con lo necesario para ejecutar la app.
-FROM node:18-alpine
+# Empezamos de nuevo con una imagen 'slim' limpia para la producción.
+FROM node:24-slim
 
 WORKDIR /app
 
