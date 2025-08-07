@@ -1,38 +1,21 @@
-# ---- Etapa 1: Builder ----
-# Aquí instalamos dependencias y construimos el proyecto
-FROM node:18-alpine AS builder
+# Use the official Node.js image as the base image
+FROM node:24-slim
 
+# Directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copia los archivos de dependencias e instala
+# Copia los archivos de dependencias
 COPY package*.json ./
-RUN npm install
 
-# Copia el resto del código fuente
-COPY . .
-
-# Genera el cliente de Prisma
-RUN npx prisma generate
-
-# Construye la aplicación para producción
-RUN npm run build
-
-# ---- Etapa 2: Production ----
-# Aquí creamos la imagen final con solo lo necesario para correr
-FROM node:18-alpine
-
-WORKDIR /app
-
-# Copia las dependencias de producción desde la etapa 'builder'
-COPY --from=builder /app/package*.json ./
+# Instala SOLO las dependencias de producción
 RUN npm install --omit=dev
 
-# Copia la aplicación compilada desde la etapa 'builder'
-COPY --from=builder /app/dist ./dist
+# Copia el código ya compilado y el schema de prisma
+# (Esto asume que ya ejecutaste 'npm run build' localmente)
+COPY ./dist ./dist
+COPY ./prisma ./prisma
 
-# Copia el schema de Prisma (necesario para migraciones en producción)
-COPY --from=builder /app/prisma ./prisma
-
+# Expone el puerto que usa la aplicación
 EXPOSE 3000
 
 # El comando para iniciar la aplicación
